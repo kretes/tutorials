@@ -69,10 +69,6 @@ def main():
     set_determinism(seed=0)
 
     amp = True
-    if amp:
-        compute_dtype = torch.float16
-    else:
-        compute_dtype = torch.float32
 
     monai.config.print_config()
     torch.backends.cudnn.benchmark = True
@@ -102,7 +98,7 @@ def main():
         args.gt_box_mode,
         intensity_transform,
         args.patch_size,
-        args.batch_size,
+        args.num_patches,
         affine_lps_to_ras=True,
         amp=amp,
     )
@@ -131,7 +127,7 @@ def main():
     )
     train_loader = DataLoader(
         train_ds,
-        batch_size=1,
+        batch_size=args.batch_size,
         shuffle=True,
         num_workers=7,
         pin_memory=torch.cuda.is_available(),
@@ -147,7 +143,7 @@ def main():
     val_loader = DataLoader(
         val_ds,
         batch_size=1,
-        num_workers=2,
+        num_workers=6,
         pin_memory=torch.cuda.is_available(),
         collate_fn=no_collation,
         persistent_workers=True,
@@ -241,7 +237,7 @@ def main():
     tensorboard_writer = SummaryWriter(args.tfevent_path)
 
     # 5. train
-    val_interval = 5  # do validation every val_interval epochs
+    val_interval = 1  # do validation every val_interval epochs
     coco_metric = COCOMetric(classes=["nodule"], iou_list=[0.1], max_detection=[100])
     best_val_epoch_metric = 0.0
     best_val_epoch = -1  # the epoch that gives best validation metrics
@@ -333,6 +329,7 @@ def main():
                     )
                     val_inputs = [val_data_i.pop("image").to(device) for val_data_i in val_data]
 
+                    print("use_inferer", use_inferer, [val_data_i["image"][0, ...].numel() for val_data_i in val_data])
                     if amp:
                         with torch.cuda.amp.autocast():
                             val_outputs = detector(val_inputs, use_inferer=use_inferer)

@@ -48,7 +48,7 @@ def generate_detection_train_transform(
     gt_box_mode,
     intensity_transform,
     patch_size,
-    batch_size,
+    num_patches,
     affine_lps_to_ras=False,
     amp=True,
 ):
@@ -63,7 +63,7 @@ def generate_detection_train_transform(
         intensity_transform: transform to scale image intensities,
             usually ScaleIntensityRanged for CT images, and NormalizeIntensityd for MR images.
         patch_size: cropped patch size for training
-        batch_size: number of cropped patches from each image
+        num_patches: number of cropped patches from each image
         affine_lps_to_ras: Usually False.
             Set True only when the original images were read by itkreader with affine_lps_to_ras=True
         amp: whether to use half precision
@@ -99,7 +99,7 @@ def generate_detection_train_transform(
                 label_keys=label_key,
                 spatial_size=patch_size,
                 whole_box=True,
-                num_samples=batch_size,
+                num_samples=num_patches,
                 pos=1,
                 neg=1,
             ),
